@@ -1,348 +1,230 @@
-# NexusAi Backend
+<div align="center">
 
-一个功能完整的 AI 对话平台后端，集成用户认证、AI 对话、RAG 检索增强、图像识别、语音合成等多种功能。
+# NexusAi
 
-## 技术栈
+**一个功能完整的 AI 对话平台**
 
-| 组件 | 技术选型 | 版本 |
-|------|----------|------|
-| 编程语言 | Go | 1.25.4 |
-| Web 框架 | Gin | v1.12.0 |
-| ORM | GORM | v1.31.1 |
-| 数据库 | MySQL | 8.0+ |
-| 缓存 | Redis | 6.0+ |
-| 向量数据库 | Qdrant | - |
-| 消息队列 | RabbitMQ | 3.x |
-| AI 框架 | CloudWeGo Eino | v0.8.5 |
-| LLM 支持 | OpenAI 兼容 API | - |
-| AI 推理 | ONNX Runtime | - |
-| MCP 协议 | mark3labs/mcp-go | v0.45.0 |
-| 认证 | JWT | golang-jwt/v4 |
-| 配置管理 | Viper | TOML 格式 |
-| 日志 | Zap | v1.27.1 |
-| 语音合成 | 阿里云 NLS | - |
+集成用户认证、AI 对话、RAG 检索增强、图像识别、语音合成等多种功能
 
-## 核心亮点 ✨
+[![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://golang.org/)
+[![Gin](https://img.shields.io/badge/Gin-v1.12.0-008EC3?style=flat)](https://github.com/gin-gonic/gin)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0+-4479A1?style=flat&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Redis](https://img.shields.io/badge/Redis-6.0+-DC382D?style=flat&logo=redis&logoColor=white)](https://redis.io/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat)](LICENSE)
 
-### 1. 多级 Redis 缓存架构
-- **模型配置缓存**：纯 Redis 缓存，5 分钟 TTL
-- **会话列表缓存**：用户会话列表 Redis 存储
-- **消息历史缓存**：会话历史 Redis 缓存，支持 Redis → 数据库回源
-- **用户信息缓存**：用户信息 30 分钟缓存
-- **在线用户追踪**：Redis Set 集合管理在线用户
-- **接口限流**：基于 Redis 的滑动窗口限流
+[功能特性](#-功能特性) • [快速开始](#-快速开始) • [API 文档](#-api-文档) • [配置说明](#️-配置)
 
-### 2. 上下文长度管理
-- **滑动窗口策略**：自动裁剪超出限制的历史消息
-- **Token 统计**：输入/输出 Token 实时统计
-- **可配置策略**：支持 `sliding_window` / `summary` 策略
-- **智能裁剪**：基于消息轮次和 Token 数双重限制
+</div>
 
-### 3. 消息队列异步处理
-- **消息持久化**：RabbitMQ 异步保存聊天消息
-- **自动重连**：连接监控和自动恢复机制
-- **手动确认**：消息处理成功才 Ack，保证可靠性
+---
 
-### 4. 完整的 AI 对话能力
-- 支持创建会话和多轮对话
-- 流式响应（SSE）
-- 对话历史持久化
-- 动态模型切换（通过管理后台配置）
-- Agent 模式支持（ReAct）
+## 📖 目录
+
+- [功能特性](#-功能特性)
+- [技术栈](#-技术栈)
+- [项目结构](#-项目结构)
+- [快速开始](#-快速开始)
+- [配置说明](#️-配置)
+- [API 文档](#-api-文档)
+- [MCP 服务](#-mcp-服务)
+- [数据模型](#-数据模型)
+- [开发指南](#-开发指南)
+
+---
+
+## ✨ 功能特性
+
+### 🤖 AI 对话
+- 多轮对话与会话管理
+- 流式响应 (SSE)
+- 动态模型切换
+- Agent 模式 (ReAct)
 - MCP 工具调用
-- RAG 检索增强生成
+- 上下文长度智能管理
 
-## 项目结构
+### 🔍 RAG 检索增强
+- 知识库文件上传 (PDF/TXT/DOCX)
+- 文档向量化存储 (Qdrant)
+- 会话级别知识隔离
+- 自动检索增强上下文
+
+### 🖼️ 图像识别
+- MobileNetV2 图像分类
+- ONNX Runtime 推理
+- 1000 种 ImageNet 分类支持
+
+### 🔊 语音合成
+- 阿里云智能语音服务
+- 文本转语音 (WAV 16000Hz)
+
+### 🔐 用户系统
+- 邮箱注册/登录
+- JWT Token 认证
+- 验证码邮件发送
+
+### ⚡ 性能优化
+- 多级 Redis 缓存架构
+- RabbitMQ 异步消息处理
+- 接口限流保护
+
+---
+
+## 🛠 技术栈
+
+| 分类 | 技术 |
+|------|------|
+| **后端框架** | Go + Gin |
+| **数据库** | MySQL + Redis + Qdrant |
+| **消息队列** | RabbitMQ |
+| **AI 框架** | CloudWeGo Eino |
+| **AI 推理** | ONNX Runtime |
+| **协议支持** | MCP (Model Context Protocol) |
+| **认证** | JWT |
+
+---
+
+## 📁 项目结构
 
 ```
 NexusAi/
-├── main.go                    # 应用入口
-├── config/                    # 配置管理
-│   ├── config.go              # 配置结构定义和加载
-│   └── config.toml            # 配置文件
-├── common/                    # 公共组件
-│   ├── ai_helper/             # AI 模型封装（Eino框架）
-│   │   ├── ai_helper.go       # AIHelper 核心类
-│   │   ├── agent.go           # ReAct Agent 实现
-│   │   ├── manager.go         # AIHelper 管理器
-│   │   ├── factory.go         # 模型工厂
-│   │   └── model_config_cache.go  # 模型配置缓存
-│   ├── code/                  # 错误码定义
-│   ├── email/                 # 邮件服务
-│   ├── image/                 # 图像识别（MobileNetV2 + ONNX）
-│   ├── mcp/                   # MCP 服务实现
-│   │   ├── main.go            # MCP 服务入口
-│   │   ├── base/server.go     # MCP 基础服务
-│   │   └── services/          # 各类 MCP 服务
-│   │       ├── weather/       # 天气查询
-│   │       ├── search/        # 网络搜索
-│   │       ├── translate/     # 文本翻译
-│   │       └── tts/           # 语音合成
-│   ├── mcpmanager/            # MCP 客户端管理器
-│   ├── mysql/                 # MySQL 连接
-│   ├── qdrant/                # Qdrant 向量数据库客户端
-│   ├── rabbitmq/              # RabbitMQ 消息队列
-│   ├── rag/                   # RAG 检索增强生成
-│   ├── redis/                 # Redis 连接
-│   ├── request/               # 请求结构体定义
-│   ├── response/              # 响应结构体定义
-│   └── tts/                   # 阿里云语音合成
-├── controller/                # 控制器层
-│   ├── user/                  # 用户控制器
-│   ├── session/               # 会话控制器
-│   ├── image/                 # 图像控制器
-│   ├── file/                  # 文件控制器
-│   ├── tts/                   # TTS 控制器
-│   └── admin/                 # 管理员控制器
-├── dao/                       # 数据访问层
-├── middleware/                # 中间件
-│   ├── jwt.go                 # JWT 认证中间件
-│   ├── admin_jwt.go           # 管理员 JWT 中间件
-│   ├── cors.go                # CORS 跨域中间件
-│   └── rate_limit.go          # 接口限流中间件
-├── model/                     # 数据模型定义
-├── pkg/                       # 工具包
-│   ├── logger/                # Zap 日志封装
-│   └── utils/                 # 工具函数
-├── router/                    # 路由定义
-├── service/                   # 服务层
-├── logs/                      # 日志目录
-├── uploads/                   # 上传文件存储
-└── docs/                      # API 文档
+├── main.go                 # 应用入口
+├── config/                 # 配置管理
+├── common/                 # 公共组件
+│   ├── ai_helper/          # AI 模型封装
+│   ├── mcp/                # MCP 服务实现
+│   ├── rag/                # RAG 检索增强
+│   ├── image/              # 图像识别
+│   └── tts/                # 语音合成
+├── controller/             # 控制器层
+├── service/                # 服务层
+├── dao/                    # 数据访问层
+├── model/                  # 数据模型
+├── middleware/             # 中间件
+├── router/                 # 路由定义
+├── pkg/                    # 工具包
+└── docs/                   # API 文档
 ```
 
-## 核心功能
+---
 
-### 1. 用户认证
-- 邮箱注册/登录
-- JWT Token 认证
-- 验证码邮件发送（Redis 缓存，3分钟有效期）
-- 用户信息管理（Redis 缓存）
-- 密码 bcrypt 加密
-
-### 2. AI 对话
-- 支持创建会话和多轮对话
-- 流式响应（SSE）
-- 对话历史持久化（RabbitMQ 异步写入）
-- 动态模型切换（通过管理后台配置）
-- Agent 模式支持（ReAct）
-- MCP 工具调用
-- **上下文长度管理**：滑动窗口自动裁剪
-- **Token 统计**：实时统计输入/输出 Token
-
-### 3. RAG 检索增强生成
-- 知识库文件上传（PDF/TXT/DOCX）
-- 文档向量化存储（Qdrant）
-- 会话级别知识隔离
-- 自动检索相关文档增强上下文
-- 文档分块处理（最大 8000 字符）
-
-### 4. 图像识别
-- 基于 MobileNetV2 的图像分类
-- ONNX Runtime 推理
-- 支持 JPEG/PNG/GIF/BMP/TIFF
-- 1000 种 ImageNet 分类
-
-### 5. 语音合成 (TTS)
-- 基于阿里云智能语音服务
-- 文本转语音（WAV 格式，16000Hz）
-- 支持最大 5000 字符
-
-### 6. 管理员功能
-- 管理员登录认证
-- AI 模型配置 CRUD
-- 模型启用/禁用
-- 设置默认模型
-
-### 7. MCP 服务集成
-- 天气查询服务
-- 网络搜索服务
-- 文本翻译服务
-- TTS 服务
-
-### 8. 缓存与限流
-- 多级 Redis 缓存
-- 接口限流保护（滑动窗口）
-- 在线用户追踪
-
-## 快速开始
+## 🚀 快速开始
 
 ### 环境要求
+
 - Go 1.21+
 - MySQL 8.0+
 - Redis 6.0+
 - Qdrant (可选，用于 RAG)
-- RabbitMQ 3.x（可选）
+- RabbitMQ 3.x (可选)
 
-### 配置
+### 安装运行
 
-1. 复制配置文件模板
 ```bash
-cp config/config.toml.example config/config.toml
+# 克隆项目
+git clone https://github.com/Nanping5/NexusAi.git
+cd NexusAi
+
+# 安装依赖
+go mod download
+
+# 复制配置文件
+cp config.toml.example config.toml
+cp .env.example .env
+
+# 修改配置（填入真实的数据库、API密钥等）
+vim config.toml
+vim .env
+
+# 运行服务
+go run main.go
 ```
 
-2. 修改配置文件 `config/config.toml`
+服务默认运行在 `http://localhost:8080`
+
+---
+
+## ⚙️ 配置
+
+### 配置文件
+
+| 文件 | 说明 |
+|------|------|
+| `config.toml` | 主配置文件（数据库、Redis、JWT 等） |
+| `.env` | 环境变量（API 密钥、代理等敏感配置） |
+
+### 主要配置项
+
 ```toml
+# config.toml
 [main_config]
 app_name = "NexusAi"
 host = "0.0.0.0"
 port = 8080
 
 [mysql_config]
-host = "localhost"
+host = "127.0.0.1"
 port = 3306
-db_name = "nexus_ai"
 user = "root"
 password = "your_password"
+db_name = "NexusAi"
 
 [redis_config]
-host = "localhost"
+host = "127.0.0.1"
 port = 6379
-password = ""
-db = 0
 
 [jwt_config]
-secret_key = "your-jwt-secret"
-issuer = "nexus-ai"
-
-[smtp]
-email_addr = "your-email@example.com"
-smtp_key = "your-smtp-key"
-smtp_server = "smtp.example.com"
-
-[image_recognition_config]
-model_path = "./common/image/models/mobilenetv2.onnx"
-label_path = "./common/image/labels/imagenet_labels.txt"
-
-[rag_config]
-rag_dimension = 1024
-rag_chat_model_name = "deepseek-chat"
-rag_doc_dir = "./Rag_docs"
-rag_base_url = "https://api.openai.com/v1"
-rag_embedding_model = "text-embedding-v3"
-
-[voice_service_config]
-access_key_id = "your-access-key-id"
-access_key_secret = "your-access-key-secret"
-app_key = "your-app-key"
-
-# AI 上下文配置
-[ai_config]
-max_context_messages = 20     # 最大保留消息轮次
-max_context_tokens = 16000    # 最大上下文 Token 数
-context_strategy = "sliding_window"  # 上下文策略
-
-[rabbitmq_config]
-host = "localhost"
-port = 5672
-username = "guest"
-password = "guest"
-vhost = "/"
+secret_key = "your_jwt_secret_key"
 ```
-
-3. 设置环境变量（可选）
-```bash
-# Agent 模式（可选）
-export AGENT_MODE=true
-export AGENT_MAX_ITERATIONS=10
-
-# MCP 服务（可选）
-export MCP_SERVER_URL="localhost:8081"
-
-# 默认系统提示词（可选）
-export DEFAULT_SYSTEM_PROMPT="You are a helpful assistant."
-
-# ONNX Runtime 库路径（可选）
-export ONNXRUNTIME_LIB_PATH="/path/to/onnxruntime"
-```
-
-> **注意**: AI 模型配置现在通过管理后台动态管理，不再需要在 .env 中配置。请登录管理后台添加模型配置。
-
-### 运行
 
 ```bash
-# 安装依赖
-go mod download
-
-# 运行主服务
-go run main.go
-
-# 运行 MCP 服务（可选）
-go run common/mcp/main.go --address=localhost:8081
-go run common/mcp/main.go --services=weather,search
+# .env
+RAG_OPENAI_API_KEY=your_api_key
+SERPAPI_KEY=your_serpapi_key
+ALIBABA_ACCESS_KEY_ID=your_access_key
+ALIBABA_ACCESS_KEY_SECRET=your_access_secret
+AMAP_API_KEY=your_amap_key
 ```
 
-服务默认运行在 `http://localhost:8080`
+---
 
-## API 文档
+## 📚 API 文档
 
 详细 API 文档请参阅 [docs/api/](docs/api/) 目录：
 
 | 模块 | 文档 | 说明 |
 |------|------|------|
-| 用户模块 | [user_api.md](docs/api/user_api.md) | 注册、登录、用户信息 |
-| AI 会话模块 | [ai_api.md](docs/api/ai_api.md) | 对话、流式响应、历史记录、模型列表 |
-| 图像识别模块 | [image_api.md](docs/api/image_api.md) | 图像分类识别 |
-| RAG 文件模块 | [rag_api.md](docs/api/rag_api.md) | 知识库文件上传 |
-| 语音合成模块 | [tts_api.md](docs/api/tts_api.md) | 文本转语音 |
-| 管理员模块 | [admin_api.md](docs/api/admin_api.md) | 管理员登录、模型配置管理 |
+| 用户 | [user_api.md](docs/api/user_api.md) | 注册、登录、用户信息 |
+| AI 会话 | [ai_api.md](docs/api/ai_api.md) | 对话、流式响应、历史记录 |
+| 图像识别 | [image_api.md](docs/api/image_api.md) | 图像分类识别 |
+| RAG | [rag_api.md](docs/api/rag_api.md) | 知识库文件上传 |
+| 语音合成 | [tts_api.md](docs/api/tts_api.md) | 文本转语音 |
+| 管理员 | [admin_api.md](docs/api/admin_api.md) | 管理员登录、模型配置 |
 
-### API 快速示例
+### 快速示例
 
 ```bash
-# 1. 发送验证码
-curl "http://localhost:8080/api/v1/user/send_captcha?email=user@example.com"
-
-# 2. 注册
-curl -X POST "http://localhost:8080/api/v1/user/register" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"123456","captcha":"123456"}'
-
-# 3. 登录获取 Token
+# 登录获取 Token
 curl -X POST "http://localhost:8080/api/v1/user/login" \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","password":"123456"}'
 
-# 4. 获取可用模型列表
-curl "http://localhost:8080/api/v1/ai/models" \
-  -H "Authorization: Bearer <token>"
-
-# 5. AI 对话（流式）
+# AI 对话（流式）
 curl -X POST "http://localhost:8080/api/v1/ai/session/create/stream" \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"user_question":"你好","model_config_id":"<config_id>"}'
 
-# 6. 图像识别
+# 图像识别
 curl -X POST "http://localhost:8080/api/v1/image/recognize" \
   -H "Authorization: Bearer <token>" \
   -F "image=@/path/to/image.jpg"
-
-# 7. RAG 文件上传
-curl -X POST "http://localhost:8080/api/v1/file/rag/upload" \
-  -H "Authorization: Bearer <token>" \
-  -F "session_id=<session_id>" \
-  -F "file=@/path/to/knowledge.pdf"
-
-# 8. 语音合成
-curl -X POST "http://localhost:8080/api/v1/voice/tts" \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"text":"你好世界"}'
-
-# 9. 管理员登录
-curl -X POST "http://localhost:8080/api/v1/admin/login" \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
-
-# 10. 获取所有模型配置（管理员）
-curl "http://localhost:8080/api/v1/admin/models" \
-  -H "Authorization: Bearer <admin_token>"
 ```
 
-## MCP 服务
+---
 
-MCP (Model Context Protocol) 服务提供外部工具集成能力：
+## 🔌 MCP 服务
+
+MCP (Model Context Protocol) 提供外部工具集成能力：
 
 ```bash
 # 启动所有 MCP 服务
@@ -350,12 +232,7 @@ go run common/mcp/main.go
 
 # 启动指定服务
 go run common/mcp/main.go --services=weather,search,tts,translate
-
-# 指定端口
-go run common/mcp/main.go --address=localhost:9090
 ```
-
-### 可用服务
 
 | 服务 | 功能 |
 |------|------|
@@ -364,7 +241,12 @@ go run common/mcp/main.go --address=localhost:9090
 | translate | 文本翻译 |
 | tts | 语音合成 |
 
-## 数据模型
+---
+
+## 📊 数据模型
+
+<details>
+<summary>点击查看数据表结构</summary>
 
 ### User (用户表)
 | 字段 | 类型 | 说明 |
@@ -382,25 +264,14 @@ go run common/mcp/main.go --address=localhost:9090
 | session_id | varchar(36) | 会话ID (UUID) |
 | user_id | varchar(20) | 用户ID |
 | title | varchar(100) | 会话标题 |
-| rag_file_id | varchar(36) | RAG文件ID |
-| rag_file_name | varchar(255) | RAG文件名 |
 
 ### Message (消息表)
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | id | uint | 主键 |
 | session_id | varchar(36) | 会话ID |
-| user_id | varchar(20) | 用户ID |
 | content | text | 消息内容 |
 | is_user | bool | 是否用户消息 |
-
-### Admin (管理员表)
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | uint | 主键 |
-| admin_id | varchar(20) | 管理员ID |
-| username | varchar(50) | 用户名 (唯一) |
-| password | varchar(255) | 密码 (bcrypt加密) |
 
 ### AIModelConfig (AI模型配置表)
 | 字段 | 类型 | 说明 |
@@ -408,27 +279,42 @@ go run common/mcp/main.go --address=localhost:9090
 | id | uint | 主键 |
 | config_id | varchar(36) | 配置ID (UUID) |
 | name | varchar(100) | 显示名称 |
-| model_type | varchar(50) | 模型类型 (openai_compatible/ollama) |
+| model_type | varchar(50) | 模型类型 |
 | base_url | varchar(255) | API地址 |
 | model_name | varchar(100) | 模型名称 |
 | api_key | varchar(255) | API密钥 |
-| description | text | 描述 |
 | is_enabled | bool | 是否启用 |
 | is_default | bool | 是否默认 |
-| sort_order | int | 排序权重 |
 
-## 开发
+</details>
 
-### 构建
+---
+
+## 🧪 开发指南
+
 ```bash
-go build -o nexus-ai main.go
-```
+# 构建
+go build -o nexusai main.go
 
-### 测试
-```bash
+# 测试
 go test ./...
+
+# MCP 服务构建
+go build -o mcp_server ./common/mcp
 ```
 
-## License
+---
 
-MIT
+## 📄 License
+
+[MIT License](LICENSE)
+
+---
+
+<div align="center">
+
+**[⬆ 回到顶部](#nexusai)**
+
+Made with ❤️ by [Nanping5](https://github.com/Nanping5)
+
+</div>

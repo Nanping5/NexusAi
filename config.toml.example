@@ -1,0 +1,69 @@
+[main_config]
+app_name = "NexusAi"
+host = "0.0.0.0"
+port = 8080
+
+[mysql_config]
+host = "127.0.0.1"
+port = 3306
+user = "your_mysql_user"
+password = "your_mysql_password"
+db_name = "NexusAi"
+
+[redis_config]
+host = "127.0.0.1"
+port = 6379
+password = ""
+db = 0
+
+[smtp]
+email_addr = "your_email@example.com"
+smtp_key = "your_smtp_key"
+smtp_server = "smtp.example.com"
+
+[auth_code_config]
+access_key_id = ""
+access_key_secret = ""
+sign_name = ""
+template_code = ""
+
+[log_config]
+log_path = "./logs"
+
+[rabbitmq_config]
+host = "127.0.0.1"
+port = 5672
+username = "guest"
+password = "guest"
+vhost = "/"
+
+[static_src_config]
+static_avatar_path = "./static/avatars"
+static_file_path = "./static/files"
+
+[jwt_config]
+secret_key = "your_jwt_secret_key"
+issuer = "your_issuer"
+subject = "user token"
+
+[image_recognition_config]
+model_path = "./common/image/models/mobilenetv2.onnx"
+label_path = "./common/image/labels/imagenet_labels.txt"
+
+[rag_config]
+rag_dimension = 1024
+rag_chat_model_name = "deepseek-chat"
+rag_doc_dir = "./Rag_docs"
+rag_base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+rag_embedding_model = "text-embedding-v3"
+
+[voice_service_config]
+access_key_id = "your_alibaba_access_key_id"
+access_key_secret = "your_alibaba_access_key_secret"
+app_key = "your_app_key"
+
+# AI 上下文配置
+[ai_config]
+max_context_messages = 20     # 最大保留消息轮次（一问一答为1轮）
+max_context_tokens = 16000     # 最大上下文 Token 数
+context_strategy = "sliding_window"  # 上下文策略：sliding_window（滑动窗口） / summary（摘要压缩）

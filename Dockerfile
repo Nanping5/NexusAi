@@ -2,7 +2,7 @@
 # 多阶段构建，最小化镜像体积
 
 # ============ 构建阶段 ============
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /build
 
@@ -18,8 +18,7 @@ COPY . .
 
 # 构建二进制文件（精简优化）
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -ldflags="-s -w -X main.version=$(git describe --tags --always --dirty 2>/dev/null || echo 'dev')" \
-    -o nexusai main.go
+    go build -ldflags="-s -w" -o nexusai main.go
 
 # ============ 运行阶段 ============
 FROM alpine:3.19

@@ -48,11 +48,6 @@ func InitRouter() *gin.Engine {
 	aiGroup.Use(middleware.JWT())
 	RegisterAIRouter(aiGroup)
 
-	//image接口（需要认证）
-	imageGroup := enterRouter.Group("/image")
-	imageGroup.Use(middleware.JWT())
-	RegisterImageRouter(imageGroup)
-
 	//file接口（需要认证）
 	fileGroup := enterRouter.Group("/file")
 	fileGroup.Use(middleware.JWT())

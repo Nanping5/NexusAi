@@ -69,11 +69,11 @@ fi
 echo "构建前端..."
 npm run build
 
-# 构建 Nginx 镜像
-echo "构建 Nginx 镜像..."
-docker build -t "${NGINX_IMAGE}:${IMAGE_TAG}" .
-
 cd ..
+
+# 构建 Nginx 镜像（从项目根目录构建，包含 nginx.conf）
+echo "构建 Nginx 镜像..."
+docker build -t "${NGINX_IMAGE}:${IMAGE_TAG}" -f frontend/Dockerfile .
 
 # ============ 3. 构建后端 ============
 echo -e "${GREEN}[3/5] 构建后端...${NC}"

@@ -17,7 +17,6 @@ import (
 	"NexusAi/config"
 	mylogger "NexusAi/pkg/logger"
 	"NexusAi/router"
-	"NexusAi/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -54,10 +53,6 @@ func Setup() {
 	}
 
 	rabbitmq.InitRabbitMQ()
-
-	if err := service.ImageService.InitRecognizer(); err != nil {
-		mylogger.Logger.Error("图像识别器初始化失败", zap.Error(err))
-	}
 
 	if err := initMCPConnections(); err != nil {
 		mylogger.Logger.Error("MCP 连接初始化失败", zap.Error(err))

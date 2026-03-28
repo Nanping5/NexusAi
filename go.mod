@@ -7,7 +7,6 @@ require (
 	github.com/aliyun/alibabacloud-nls-go-sdk v1.1.1
 	github.com/cloudwego/eino v0.8.5
 	github.com/cloudwego/eino-ext/components/embedding/ark v0.1.1
-	github.com/cloudwego/eino-ext/components/model/ollama v0.1.8
 	github.com/cloudwego/eino-ext/components/model/openai v0.1.10
 	github.com/cloudwego/eino-ext/components/tool/mcp v0.0.8
 	github.com/gin-gonic/gin v1.12.0
@@ -21,10 +20,8 @@ require (
 	github.com/serpapi/serpapi-golang v0.0.0-20260126142127-0e41c7993cda
 	github.com/spf13/viper v1.21.0
 	github.com/streadway/amqp v1.1.0
-	github.com/yalue/onnxruntime_go v1.27.0
 	go.uber.org/zap v1.27.1
 	golang.org/x/crypto v0.48.0
-	golang.org/x/image v0.22.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.31.1
 )
@@ -42,7 +39,6 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/eino-contrib/jsonschema v1.0.3 // indirect
-	github.com/eino-contrib/ollama v0.1.0 // indirect
 	github.com/evanphx/json-patch v0.5.2 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.12 // indirect

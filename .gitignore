@@ -18,7 +18,9 @@ frontend/
 config.toml
 # Dependency directories
 vendor/
-.claude/
+claude/
+settings.json
+settings.local.json
 # Build output
 bin/
 dist/

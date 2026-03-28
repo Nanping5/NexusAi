@@ -1,0 +1,179 @@
+version: '3.8'
+
+services:
+  # ============ 核心应用 ============
+  nexusai:
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_NAMESPACE:-nanping5}/nexusai:${IMAGE_TAG:-latest}
+    container_name: nexusai-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - GIN_MODE=release
+      - GOMAXPROCS=2
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+      - ./config.toml:/app/config.toml:ro
+      - ./.env:/app/.env:ro
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 256M
+        reservations:
+          cpus: '0.5'
+          memory: 128M
+    networks:
+      - nexusai-network
+
+  # ============ 前端 Nginx ============
+  nginx:
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_NAMESPACE:-nanping5}/nexusai-nginx:${IMAGE_TAG:-latest}
+    container_name: nexusai-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - nexusai
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 64M
+    networks:
+      - nexusai-network
+
+  # ============ 数据库服务 ============
+  mysql:
+    image: mysql:8.0
+    container_name: nexusai-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-nexusai_root_2024}
+      MYSQL_DATABASE: NexusAi
+      MYSQL_USER: ${MYSQL_USER:-nexusai}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-nexusai_pass_2024}
+    command:
+      - --innodb-buffer-pool-size=128M
+      - --innodb-log-buffer-size=8M
+      - --innodb-log-file-size=48M
+      - --max-connections=50
+      - --table-open-cache=64
+      - --thread-cache-size=8
+      - --key-buffer-size=16M
+      - --performance-schema=OFF
+      - --skip-innodb-buffer-pool-load-at-startup
+      - --innodb-flush-log-at-trx-commit=2
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 384M
+    networks:
+      - nexusai-network
+
+  # ============ 缓存服务 ============
+  redis:
+    image: redis:7-alpine
+    container_name: nexusai-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --maxmemory 96mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --appendonly no
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+    networks:
+      - nexusai-network
+
+  # ============ 向量数据库 ============
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: nexusai-qdrant
+    restart: unless-stopped
+    environment:
+      - QDRANT__STORAGE__STORAGE_PATH=/qdrant/storage
+      - QDRANT__STORAGE__SNAPSHOTS_PATH=/qdrant/snapshots
+    command:
+      - ./qdrant
+      - --storage-path
+      - /qdrant/storage
+    volumes:
+      - qdrant-data:/qdrant/storage
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 384M
+    networks:
+      - nexusai-network
+
+  # ============ 消息队列 ============
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: nexusai-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-nexusai}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-nexusai_mq_2024}
+      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: 256MB
+      RABBITMQ_VM_MEMORY_HIGH_WATERMARK_TYPE: absolute
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 384M
+    networks:
+      - nexusai-network
+
+# ============ 数据卷 ============
+volumes:
+  mysql-data:
+  redis-data:
+  qdrant-data:
+  rabbitmq-data:
+
+# ============ 网络 ============
+networks:
+  nexusai-network:
+    driver: bridge
